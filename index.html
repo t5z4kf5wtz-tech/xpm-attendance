@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#f4f7fa">
+    <meta name="robots" content="noindex, nofollow">
+    <title>xPM 參會點名</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <div class="app-shell" id="app">
+      <header class="topbar">
+        <a class="brand" href="#top" aria-label="xPM 參會點名首頁">
+          <span class="brand-mark"><i></i><i></i></span>
+          <span>xPM <b>ATTENDANCE</b></span>
+        </a>
+        <span class="save-indicator" id="save-status"><i></i> 自動儲存至此瀏覽器</span>
+      </header>
+
+      <main id="top">
+        <section class="hero">
+          <div>
+            <p class="eyebrow">MEETING OPERATIONS</p>
+            <h1>參會點名</h1>
+            <p class="hero-copy">快速確認出席狀況，並將名單整理成會議投影片。</p>
+          </div>
+          <div class="hero-actions">
+            <button class="button button-secondary" data-action="add-group" type="button"><span>＋</span> 新增群組</button>
+            <button class="button button-primary" data-action="export-pptx" type="button"><span class="download-icon">↓</span> 匯出 PowerPoint</button>
+          </div>
+        </section>
+
+        <section class="summary-grid" aria-label="點名統計">
+          <article class="summary-card summary-total"><span class="summary-label">應到人數</span><strong id="count-total">0</strong><span class="summary-unit">位參會人員</span></article>
+          <article class="summary-card"><span class="summary-label"><i class="status-dot dot-present"></i> 出席</span><strong id="count-present">0</strong><span class="summary-unit">位</span></article>
+          <article class="summary-card"><span class="summary-label"><i class="status-dot dot-absent"></i> 缺席</span><strong id="count-absent">0</strong><span class="summary-unit">位</span></article>
+          <article class="summary-card"><span class="summary-label"><i class="status-dot dot-leave"></i> 請假</span><strong id="count-leave">0</strong><span class="summary-unit">位</span></article>
+        </section>
+
+        <section class="roster-toolbar">
+          <div>
+            <h2>參會名單 <span id="group-count" class="subtle-count"></span></h2>
+            <p>點選狀態即可完成點名；編輯按鈕可修改姓名。</p>
+          </div>
+          <label class="search-box">
+            <span aria-hidden="true">⌕</span>
+            <input id="search-input" type="search" placeholder="搜尋姓名或群組" aria-label="搜尋姓名或群組">
+            <kbd>⌘ K</kbd>
+          </label>
+        </section>
+
+        <details class="slide-settings">
+          <summary><span class="settings-icon">⚙</span><span><b>簡報內容</b><small>標題、事業群與參會須知</small></span><span class="chevron">⌄</span></summary>
+          <div class="settings-fields">
+            <label class="field field-wide">會議標題<input data-config="meetingTitle" type="text" maxlength="90"></label>
+            <label class="field">日期<input data-config="meetingDate" type="date"></label>
+            <label class="field">事業群<input data-config="businessUnit" type="text" maxlength="40"></label>
+            <label class="field field-wide">參會須知<textarea data-config="notices" rows="2" placeholder="每行一則說明"></textarea></label>
+          </div>
+        </details>
+
+        <section id="group-grid" class="group-grid" aria-live="polite"></section>
+
+      <footer class="app-footer"><span class="footer-lock">●</span> 名單儲存於目前瀏覽器；雲端分享版可供持有連結者共同查看與編輯。</footer>
+      </main>
+
+      <dialog id="attendee-dialog" class="attendee-dialog">
+        <form id="attendee-form">
+          <div class="dialog-heading"><div><p class="eyebrow">ATTENDEE DETAILS</p><h2 id="dialog-title">新增參會人員</h2></div><button class="icon-button" data-action="close-dialog" type="button" aria-label="關閉">×</button></div>
+          <label class="field">中文姓名<input id="attendee-chinese" name="chineseName" required maxlength="28" autocomplete="off" placeholder="例如：王小明"></label>
+          <label class="field">英文姓名<input id="attendee-english" name="englishName" maxlength="36" autocomplete="off" placeholder="例如：Alex Wang"></label>
+          <label class="field">所屬群組<select id="attendee-group" name="groupId"></select></label>
+          <div class="dialog-actions"><button class="button button-danger" id="delete-attendee" data-action="delete-attendee" type="button">刪除人員</button><span class="action-spacer"></span><button class="button button-secondary" data-action="close-dialog" type="button">取消</button><button class="button button-primary" type="submit">儲存</button></div>
+        </form>
+      </dialog>
+    </div>
+    <script src="cloud-config.js"></script>
+    <script type="module" src="cloud-bootstrap.js"></script>
+  </body>
+</html>
