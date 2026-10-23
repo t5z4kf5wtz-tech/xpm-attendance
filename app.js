@@ -1,4 +1,4 @@
-const const leaderPersonId = group.attendees[0]?.id;    const rows = people.length ? = 'xpm-attendance-v1';
+const STORAGE_KEY = 'xpm-attendance-v1';
 const STATUS = { present: '出席', absent: '缺席', leave: '請假' };
 const SEED_GROUPS = window.ATTENDANCE_SEED_GROUPS || [];
 
@@ -18,7 +18,7 @@ function loadState() {
     return structuredClone(window.ATTENDANCE_INITIAL_STATE);
   }
   try {
-    const saved = JSON.parse(localStorage.getItem(const leaderPersonId = group.attendees[0]?.id;    const rows = people.length ?));
+    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
     if (saved && Array.isArray(saved.groups)) {
       saved.groups = saved.groups.map((group) => ({ ...group, attendees: Array.isArray(group.attendees) ? group.attendees.map((person) => ({ ...person, status: STATUS[person.status] ? person.status : 'present' })) : [] }));
       return { ...makeInitialState(), ...saved };
@@ -44,7 +44,7 @@ function escapeHTML(value = '') {
 
 function saveState() {
   try {
-    localStorage.setItem(const leaderPersonId = group.attendees[0]?.id;    const rows = people.length ?, JSON.stringify(state));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   } catch (error) {
     console.warn('Could not save the roster in this browser.', error);
   }
@@ -83,14 +83,17 @@ function renderGroups() {
     const presentCount = group.attendees.filter((person) => person.status === 'present').length;
     const groupMatches = term && group.name.toLocaleLowerCase().includes(term);
     const people = groupMatches ? group.attendees : group.attendees.filter((person) => !term || `${person.chineseName} ${person.englishName}`.toLocaleLowerCase().includes(term));
-    const rows = people.length ? people.map((person) => `
-      <div class="attendee-row${group.attendees[0]?.id === person.id ? ' center-leader' : ''}">
+    const rows = people.length ? people.map((person) => {
+      const isLeader = group.attendees[0]?.id === person.id;
+      return `
+      <div class="attendee-row${isLeader ? ' center-leader' : ''}">
         <div class="person-names" title="${escapeHTML(`${person.chineseName} ${person.englishName}`)}"><span class="chinese-name">${escapeHTML(person.chineseName)}</span><span class="english-name">${escapeHTML(person.englishName)}</span></div>
         <button class="edit-person" data-action="edit-attendee" data-group="${group.id}" data-person="${person.id}" type="button" aria-label="編輯 ${escapeHTML(person.chineseName)}">✎</button>
         <div class="status-control" role="group" aria-label="${escapeHTML(person.chineseName)} 的出席狀態">
           ${Object.entries(STATUS).map(([status, label]) => `<button type="button" data-action="set-status" data-status="${status}" data-group="${group.id}" data-person="${person.id}" aria-label="${label}" title="${label}" aria-pressed="${person.status === status}">${label}</button>`).join('')}
         </div>
-      </div>`).join('') : '<div class="empty-list">此群組沒有符合的姓名</div>';
+      </div>`;
+    }).join('') : '<div class="empty-list">此群組沒有符合的姓名</div>';
     return `<article class="group-card" data-group-card="${group.id}">
       <header class="group-header"><h3>${escapeHTML(group.name)}</h3><span class="group-size">${group.attendees.length} 人</span><div class="group-tools"><button type="button" data-action="rename-group" data-group="${group.id}" title="重新命名群組" aria-label="重新命名 ${escapeHTML(group.name)}">✎</button><button type="button" data-action="remove-group" data-group="${group.id}" title="刪除群組" aria-label="刪除 ${escapeHTML(group.name)}">×</button></div></header>
       <div class="attendee-list">${rows}</div>
@@ -201,7 +204,7 @@ document.addEventListener('keydown', (event) => {
 render();
 window.ATTENDANCE_APPLY_REMOTE = (incoming) => {
   state = structuredClone(incoming);
-  try { localStorage.setItem(const leaderPersonId = group.attendees[0]?.id;    const rows = people.length ?, JSON.stringify(state)); } catch {}
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch {}
   render();
 };
 
@@ -259,8 +262,8 @@ function buildSlideXml(groupSubset = state.groups, pageIndex = 0, pageCount = 1)
       const rowY = rowTop + personIndex * rowH;
       const muted = person.status === 'absent' ? '89949A' : person.status === 'leave' ? 'A57830' : '17242C';
       const markColor = person.status === 'present' ? '33A078' : person.status === 'absent' ? 'D16E6E' : 'DEA03F';
-      shapes.push(pptShape({ x: x + 0.07, y: rowY, w: 0.66, h: rowH, text: person.chineseName, fontSize: rowFontcolor: muted, bold: personIndex === 0, margin: 0 }));
-      shapes.push(pptShape({ x: x + 0.73, y: rowY, w: 0.78, h: rowH, text: person.englishName, fontSize: rowFontcolor: muted, bold: personIndex === 0, margin: 0 }));
+      shapes.push(pptShape({ x: x + 0.07, y: rowY, w: 0.66, h: rowH, text: person.chineseName, fontSize: rowFont, color: muted, bold: personIndex === 0, margin: 0 }));
+      shapes.push(pptShape({ x: x + 0.73, y: rowY, w: 0.78, h: rowH, text: person.englishName, fontSize: rowFont, color: muted, bold: personIndex === 0, margin: 0 }));
       shapes.push(pptShape({ x: x + cardW - 0.14, y: rowY + 0.075, w: 0.055, h: 0.055, geometry: 'ellipse', fill: markColor }));
     });
     const groupPresent = group.attendees.filter((person) => person.status === 'present').length;
