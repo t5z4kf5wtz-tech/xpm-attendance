@@ -180,3 +180,5 @@ h1 { margin: 0; font-size: 32px; line-height: 1.2; font-weight: 700; letter-spac
   .add-attendee { min-height: 27px; margin: 4px 7px 7px; width: calc(100% - 14px); font-size: 10px; }
 }
 
+
+.center-leader .chinese-name, .center-leader .english-name { font-weight: 800; }
