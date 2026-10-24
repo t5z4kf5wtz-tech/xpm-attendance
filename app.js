@@ -86,7 +86,8 @@ function renderGroups() {
     const rows = people.length ? people.map((person) => {
       const isLeader = group.attendees[0]?.id === person.id;
       return `
-      <div class="attendee-row${isLeader ? ' center-leader' : ''}">
+      <div class="attendee-row${isLeader ? ' center-leader' : ''}" data-group="${group.id}" data-person="${person.id}">
+        <button class="reorder-handle" data-group="${group.id}" data-person="${person.id}" type="button" aria-label="調整 ${escapeHTML(person.chineseName)} 順序；可拖曳，或按上下鍵移動" title="拖曳排序；聚焦後使用 ↑/↓ 調整" aria-keyshortcuts="ArrowUp ArrowDown">⠿</button>
         <div class="person-names" title="${escapeHTML(`${person.chineseName} ${person.englishName}`)}"><span class="chinese-name">${escapeHTML(person.chineseName)}</span><span class="english-name">${escapeHTML(person.englishName)}</span></div>
         <button class="edit-person" data-action="edit-attendee" data-group="${group.id}" data-person="${person.id}" type="button" aria-label="編輯 ${escapeHTML(person.chineseName)}">✎</button>
         <div class="status-control" role="group" aria-label="${escapeHTML(person.chineseName)} 的出席狀態">
@@ -108,6 +109,108 @@ function render() {
   renderSettings();
   renderGroups();
 }
+
+function moveAttendee(groupId, personId, targetPersonId, placeAfter = false) {
+  const group = state.groups.find((item) => item.id === groupId);
+  if (!group || personId === targetPersonId) return false;
+  const sourceIndex = group.attendees.findIndex((item) => item.id === personId);
+  const targetIndex = group.attendees.findIndex((item) => item.id === targetPersonId);
+  if (sourceIndex < 0 || targetIndex < 0) return false;
+  const [person] = group.attendees.splice(sourceIndex, 1);
+  let insertionIndex = targetIndex + (placeAfter ? 1 : 0);
+  if (sourceIndex < insertionIndex) insertionIndex -= 1;
+  group.attendees.splice(insertionIndex, 0, person);
+  saveState();
+  renderGroups();
+  const handle = [...groupGrid.querySelectorAll('.reorder-handle')].find((item) => item.dataset.group === groupId && item.dataset.person === personId);
+  handle?.focus();
+  return true;
+}
+
+function moveAttendeeBy(groupId, personId, offset) {
+  const group = state.groups.find((item) => item.id === groupId);
+  if (!group) return;
+  const sourceIndex = group.attendees.findIndex((item) => item.id === personId);
+  const targetIndex = Math.max(0, Math.min(group.attendees.length - 1, sourceIndex + offset));
+  if (sourceIndex < 0 || sourceIndex === targetIndex) return;
+  const [person] = group.attendees.splice(sourceIndex, 1);
+  group.attendees.splice(targetIndex, 0, person);
+  saveState();
+  renderGroups();
+  const handle = [...groupGrid.querySelectorAll('.reorder-handle')].find((item) => item.dataset.group === groupId && item.dataset.person === personId);
+  handle?.focus();
+}
+
+let reorderSession = null;
+
+function clearReorderStyles() {
+  groupGrid.querySelectorAll('.is-dragging, .drop-before, .drop-after').forEach((row) => {
+    row.classList.remove('is-dragging', 'drop-before', 'drop-after');
+  });
+}
+
+groupGrid.addEventListener('pointerdown', (event) => {
+  const handle = event.target.closest('.reorder-handle');
+  if (!handle || event.button !== 0) return;
+  const row = handle.closest('.attendee-row');
+  if (!row) return;
+  reorderSession = {
+    groupId: row.dataset.group,
+    personId: row.dataset.person,
+    pointerId: event.pointerId,
+    startX: event.clientX,
+    startY: event.clientY,
+    sourceRow: row,
+    targetPersonId: null,
+    placeAfter: false,
+    dragging: false
+  };
+  handle.setPointerCapture(event.pointerId);
+});
+
+groupGrid.addEventListener('pointermove', (event) => {
+  if (!reorderSession || event.pointerId !== reorderSession.pointerId) return;
+  const distance = Math.hypot(event.clientX - reorderSession.startX, event.clientY - reorderSession.startY);
+  if (!reorderSession.dragging && distance < 7) return;
+  reorderSession.dragging = true;
+  event.preventDefault();
+  reorderSession.sourceRow.classList.add('is-dragging');
+  groupGrid.querySelectorAll('.drop-before, .drop-after').forEach((row) => row.classList.remove('drop-before', 'drop-after'));
+  const target = document.elementFromPoint(event.clientX, event.clientY)?.closest('.attendee-row');
+  if (!target || target.dataset.group !== reorderSession.groupId) {
+    reorderSession.targetPersonId = null;
+    return;
+  }
+  const bounds = target.getBoundingClientRect();
+  reorderSession.targetPersonId = target.dataset.person;
+  reorderSession.placeAfter = event.clientY >= bounds.top + bounds.height / 2;
+  target.classList.add(reorderSession.placeAfter ? 'drop-after' : 'drop-before');
+});
+
+groupGrid.addEventListener('pointerup', (event) => {
+  if (!reorderSession || event.pointerId !== reorderSession.pointerId) return;
+  const session = reorderSession;
+  reorderSession = null;
+  clearReorderStyles();
+  if (session.dragging && session.targetPersonId) {
+    moveAttendee(session.groupId, session.personId, session.targetPersonId, session.placeAfter);
+  }
+});
+
+groupGrid.addEventListener('pointercancel', (event) => {
+  if (!reorderSession || event.pointerId !== reorderSession.pointerId) return;
+  reorderSession = null;
+  clearReorderStyles();
+});
+
+groupGrid.addEventListener('keydown', (event) => {
+  const handle = event.target.closest('.reorder-handle');
+  if (!handle) return;
+  const offset = event.key === 'ArrowUp' ? -1 : event.key === 'ArrowDown' ? 1 : 0;
+  if (!offset) return;
+  event.preventDefault();
+  moveAttendeeBy(handle.dataset.group, handle.dataset.person, offset);
+});
 
 function setStatus(groupId, personId, status) {
   const group = state.groups.find((item) => item.id === groupId);
